@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	invalidRuleError = fmt.Errorf("rule is not a alerting rule")
+	errInvalidRule = fmt.Errorf("rule is not a alerting rule")
 )
 
 func ConvertToK8sResource(
@@ -27,7 +27,7 @@ func ConvertToK8sResource(
 	namespaceMapper request.NamespaceMapper,
 ) (*model.AlertRule, error) {
 	if rule.Type() != ngmodels.RuleTypeAlerting {
-		return nil, invalidRuleError
+		return nil, errInvalidRule
 	}
 	k8sRule := &model.AlertRule{
 		ObjectMeta: metav1.ObjectMeta{
@@ -53,7 +53,7 @@ func ConvertToK8sResource(
 	}
 
 	if rule.RuleGroup != "" && !ngmodels.IsNoGroupRuleGroup(rule.RuleGroup) {
-		k8sRule.ObjectMeta.Labels["group"] = rule.RuleGroup
+		k8sRule.Labels["group"] = rule.RuleGroup
 	}
 
 	if rule.For != 0 {
@@ -232,33 +232,11 @@ func ConvertToDomainModel(orgID int64, k8sRule *model.AlertRule) (*ngmodels.Aler
 	domainRule.IntervalSeconds = int64(interval)
 
 	for refID, query := range k8sRule.Spec.Data {
-		modelJson, err := json.Marshal(query.Model)
+		domainQuery, err := convertToDomainQuery(query, refID)
 		if err != nil {
-			return nil, fmt.Errorf("failed to marshal model: %w", err)
+			return nil, err
 		}
-		domainQuery := ngmodels.AlertQuery{
-			RefID:         refID,
-			QueryType:     query.QueryType,
-			DatasourceUID: string(query.DatasourceUID),
-			Model:         modelJson,
-		}
-		if query.RelativeTimeRange != nil {
-			from, err := prom_model.ParseDuration(string(query.RelativeTimeRange.From))
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse duration: %w", err)
-			}
-			to, err := prom_model.ParseDuration(string(query.RelativeTimeRange.To))
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse duration: %w", err)
-			}
-			domainQuery.RelativeTimeRange = ngmodels.RelativeTimeRange{
-				From: ngmodels.Duration(from),
-				To:   ngmodels.Duration(to),
-			}
-		}
-
 		domainRule.Data = append(domainRule.Data, domainQuery)
-
 		if query.Source != nil && *query.Source {
 			if domainRule.Condition != "" {
 				return nil, fmt.Errorf("multiple queries marked as source: %s and %s", domainRule.Condition, refID)
@@ -312,4 +290,32 @@ func ConvertToDomainModel(orgID int64, k8sRule *model.AlertRule) (*ngmodels.Aler
 	}
 
 	return domainRule, nil
+}
+
+func convertToDomainQuery(query model.AlertRuleQuery, refID string) (ngmodels.AlertQuery, error) {
+	modelJson, err := json.Marshal(query.Model)
+	if err != nil {
+		return ngmodels.AlertQuery{}, fmt.Errorf("failed to marshal model: %w", err)
+	}
+	domainQuery := ngmodels.AlertQuery{
+		RefID:         refID,
+		QueryType:     query.QueryType,
+		DatasourceUID: string(query.DatasourceUID),
+		Model:         modelJson,
+	}
+	if query.RelativeTimeRange != nil {
+		from, err := prom_model.ParseDuration(string(query.RelativeTimeRange.From))
+		if err != nil {
+			return ngmodels.AlertQuery{}, fmt.Errorf("failed to parse duration: %w", err)
+		}
+		to, err := prom_model.ParseDuration(string(query.RelativeTimeRange.To))
+		if err != nil {
+			return ngmodels.AlertQuery{}, fmt.Errorf("failed to parse duration: %w", err)
+		}
+		domainQuery.RelativeTimeRange = ngmodels.RelativeTimeRange{
+			From: ngmodels.Duration(from),
+			To:   ngmodels.Duration(to),
+		}
+	}
+	return domainQuery, nil
 }

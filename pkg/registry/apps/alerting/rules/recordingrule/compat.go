@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	invalidRuleError = fmt.Errorf("rule is not a recording rule")
+	errInvalidRule = fmt.Errorf("rule is not a recording rule")
 )
 
 func ConvertToK8sResource(
@@ -26,14 +26,15 @@ func ConvertToK8sResource(
 	namespaceMapper request.NamespaceMapper,
 ) (*model.RecordingRule, error) {
 	if rule.Type() != ngmodels.RuleTypeRecording {
-		return nil, invalidRuleError
+		return nil, errInvalidRule
 	}
 	k8sRule := &model.RecordingRule{
 		ObjectMeta: metav1.ObjectMeta{
-			UID:       types.UID(rule.UID),
-			Name:      rule.UID,
-			Namespace: namespaceMapper(orgID),
-			Labels:    make(map[string]string),
+			UID:             types.UID(rule.UID),
+			Name:            rule.UID,
+			Namespace:       namespaceMapper(orgID),
+			ResourceVersion: fmt.Sprint(rule.Version),
+			Labels:          make(map[string]string),
 		},
 		Spec: model.RecordingRuleSpec{
 			Title:  rule.Title,
@@ -50,7 +51,7 @@ func ConvertToK8sResource(
 	}
 
 	if rule.RuleGroup != "" && !ngmodels.IsNoGroupRuleGroup(rule.RuleGroup) {
-		k8sRule.ObjectMeta.Labels["group"] = rule.RuleGroup
+		k8sRule.Labels["group"] = rule.RuleGroup
 	}
 
 	for k, v := range rule.Labels {

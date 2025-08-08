@@ -63,6 +63,7 @@ func TestIntegrationOpenAPIs(t *testing.T) {
 		require.NoError(t, err, "requesting OpenAPI v2")
 		require.Equal(t, "Grafana API Server", v2.Info.Title)
 	})
+
 	dir := "openapi_snapshots"
 
 	var groups = []schema.GroupVersion{{

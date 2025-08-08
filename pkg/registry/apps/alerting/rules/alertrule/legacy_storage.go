@@ -84,7 +84,7 @@ func (s *legacyStorage) Get(ctx context.Context, name string, _ *metav1.GetOptio
 	}
 
 	obj, err := ConvertToK8sResource(user.GetOrgID(), &rule, s.namespacer)
-	if err != nil && errors.Is(err, invalidRuleError) {
+	if err != nil && errors.Is(err, errInvalidRule) {
 		return nil, k8serrors.NewNotFound(ResourceInfo.GroupResource(), name)
 	}
 	return obj, err
@@ -129,6 +129,11 @@ func (s *legacyStorage) Create(ctx context.Context, obj runtime.Object, createVa
 }
 
 func (s *legacyStorage) Update(ctx context.Context, name string, objInfo rest.UpdatedObjectInfo, createValidation rest.ValidateObjectFunc, updateValidation rest.ValidateObjectUpdateFunc, forceAllowCreate bool, options *metav1.UpdateOptions) (runtime.Object, bool, error) {
+	info, err := request.NamespaceInfoFrom(ctx, true)
+	if err != nil {
+		return nil, false, err
+	}
+
 	user, err := identity.GetRequester(ctx)
 	if err != nil {
 		return nil, false, err
@@ -158,13 +163,18 @@ func (s *legacyStorage) Update(ctx context.Context, name string, objInfo rest.Up
 		p.UID = types.UID(p.Name)
 	}
 
-	// TODO(@rwwiv): this org id needs to be from the namespace rather than the user
-	model, err := ConvertToDomainModel(user.GetOrgID(), p)
+	model, err := ConvertToDomainModel(info.OrgID, p)
 	if err != nil {
 		return old, false, err
 	}
 
-	updated, err := s.service.UpdateAlertRule(ctx, user, *model, ngmodels.ProvenanceNone)
+	// ignore returned rule as it doesn't contain the updated version
+	_, err = s.service.UpdateAlertRule(ctx, user, *model, ngmodels.ProvenanceNone)
+	if err != nil {
+		return nil, false, err
+	}
+
+	updated, _, err := s.service.GetAlertRule(ctx, user, name)
 	if err != nil {
 		return nil, false, err
 	}
@@ -201,8 +211,7 @@ func (s *legacyStorage) Delete(ctx context.Context, name string, deleteValidatio
 	return old, false, nil
 }
 
-func (s *legacyStorage) DeleteCollection(_ context.Context, _ rest.ValidateObjectFunc, _ *metav1.DeleteOptions, _ *internalversion.ListOptions) (runtime.Object, error) {
-	// TODO: should we support this?
-	// @moustafab: I think so, as we support a bulk delete operation in the current API.
+func (s *legacyStorage) DeleteCollection(ctx context.Context, _ rest.ValidateObjectFunc, _ *metav1.DeleteOptions, _ *internalversion.ListOptions) (runtime.Object, error) {
+	// TODO: support this once a pattern is established for bulk delete operations
 	return nil, k8serrors.NewMethodNotSupported(ResourceInfo.GroupResource(), "delete")
 }
