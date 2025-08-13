@@ -5,14 +5,8 @@ import { OptionsPaneItemDescriptor } from 'app/features/dashboard/components/Pan
 
 import { ConditionalRendering } from './ConditionalRendering';
 
-export function useConditionalRenderingEditor(
-  conditionalRendering?: ConditionalRendering
-): OptionsPaneCategoryDescriptor | null {
-  if (!conditionalRendering) {
-    return null;
-  }
-
-  const { result } = conditionalRendering.state;
+function protectedUseConditionalRenderingEditor(conditionalRendering: ConditionalRendering) {
+  const { result } = conditionalRendering.useState();
 
   const title = t('dashboard.conditional-rendering.root.title', 'Show / hide rules');
 
@@ -34,4 +28,14 @@ export function useConditionalRenderingEditor(
       render: () => <conditionalRendering.Component model={conditionalRendering} />,
     })
   );
+}
+
+export function useConditionalRenderingEditor(
+  conditionalRendering?: ConditionalRendering
+): OptionsPaneCategoryDescriptor | null {
+  if (!conditionalRendering) {
+    return null;
+  }
+
+  return protectedUseConditionalRenderingEditor(conditionalRendering);
 }
