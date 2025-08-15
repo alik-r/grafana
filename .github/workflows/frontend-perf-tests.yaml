@@ -62,18 +62,13 @@ jobs:
 
       - name: Install Playwright browsers
         run: yarn playwright install chromium --with-deps
-      
-      - run: tree -aL 2
 
       - name: Run Playwright tests
         env:
-          GRAFANA_URL: http://fsperfbaseline.grafana-dev.net
+          GRAFANA_URL: https://fsperfbaseline.grafana-dev.net
           GRAFANA_ADMIN_USER: ${{ env.FSPERFBASELINE_USERNAME }}
           GRAFANA_ADMIN_PASSWORD: ${{ env.FSPERFBASELINE_PASSWORD }}
         run: yarn e2e:playwright --grep @performance # probably written to wrong place
-      
-      - run: jq -r '.[][] | "\(.name) \(.expires)"' playwright/.auth/admin.json
-        if: always()
 
       - run: tree -a playwright
         if: always()
