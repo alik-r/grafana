@@ -25,6 +25,7 @@ export const TextWrapOptionsEditor = ({
     <>
       <Field label={t('table.text-wrap-options.label-wrap-text', 'Wrap text')}>
         <Switch
+          // needs to be label and not data-testid because of how Switch is implemented
           label={selectors.components.PanelEditor.OptionsPane.fieldLabel(`Wrap text`)}
           value={cellOptions.wrapText}
           onChange={onWrapTextChange}
@@ -36,7 +37,7 @@ export const TextWrapOptionsEditor = ({
           <Input
             type="number"
             min="0"
-            label={selectors.components.PanelEditor.OptionsPane.fieldLabel(`Max cell height`)}
+            data-testid={selectors.components.PanelEditor.OptionsPane.fieldLabel(`Max cell height`)}
             value={cellOptions.maxHeight}
             onChange={onMaxWrappedHeightChange}
             placeholder={t('table.text-wrap-options.placeholder-max-height', 'none')}
