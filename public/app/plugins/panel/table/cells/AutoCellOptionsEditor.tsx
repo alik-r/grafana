@@ -1,3 +1,5 @@
+import { useId } from 'react';
+
 import { t } from '@grafana/i18n';
 import { TableAutoCellOptions, TableColorTextCellOptions } from '@grafana/schema';
 import { Field, Switch } from '@grafana/ui';
@@ -14,6 +16,8 @@ export const AutoCellOptionsEditor = ({
     onChange(cellOptions);
   };
 
+  const htmlId = useId();
+
   return (
     <Field
       label={t('table.auto-cell-options-editor.label-wrap-text', 'Wrap text')}
@@ -23,7 +27,7 @@ export const AutoCellOptionsEditor = ({
       )}
     >
       {/* @ts-ignore this has been migrated out of existence. */}
-      <Switch value={cellOptions.wrapText} onChange={onWrapTextChange} />
+      <Switch id={htmlId} value={cellOptions.wrapText} onChange={onWrapTextChange} />
     </Field>
   );
 };

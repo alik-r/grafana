@@ -43,13 +43,13 @@ const getColumnIdx = async (loc: Page | Locator, columnName: string) => {
 
 const disableAllTextWrap = async (loc: Page | Locator) => {
   // disable text wrapping for all of the columns, since long text with links in them can push the links off the screen.
-  const wrapTextToggle = loc.getByText('Wrap text');
+  const wrapTextToggle = loc.getByLabel('Wrap text');
   const count = await wrapTextToggle.count();
 
   for (let i = 0; i < count; i++) {
     const toggle = wrapTextToggle.nth(i);
-    if ((await toggle.locator('//preceding-sibling::input').getAttribute('checked')) !== null) {
-      await toggle.click();
+    if ((await toggle.getAttribute('checked')) !== null) {
+      await toggle.locator('//..').click();
     }
   }
 };
@@ -90,8 +90,8 @@ test.describe('Panels test: Table - Kitchen Sink', { tag: ['@panels', '@table'] 
     await dashboardPage
       .getByGrafanaSelector(selectors.components.PanelEditor.OptionsPane.fieldLabel('Cell options Cell value inspect'))
       .first()
-      .locator('label[for="custom.inspect"]')
-      .click();
+      .getByRole('switch', { name: 'Cell value inspect' })
+      .click({ force: true });
     await loremIpsumCell.hover();
     await expect(getCellHeight(page, 1, longTextColIdx)).resolves.toBeLessThan(100);
 

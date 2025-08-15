@@ -87,6 +87,7 @@ export function TableNG(props: TableNGProps) {
     enableSharedCrosshair = false,
     enableVirtualization,
     footerOptions,
+    frozenColumns = 0,
     getActions = () => [],
     height,
     initialSortBy,
@@ -96,6 +97,7 @@ export function TableNG(props: TableNGProps) {
     onSortByChange,
     showTypeIcons,
     structureRev,
+    timeRange,
     transparent,
     width,
   } = props;
@@ -184,6 +186,19 @@ export function TableNG(props: TableNGProps) {
     [theme]
   );
   const widths = useMemo(() => computeColWidths(visibleFields, availableWidth), [visibleFields, availableWidth]);
+  const numColsFullyInView = useMemo(
+    () =>
+      widths.reduce(
+        ([count, remainingWidth], nextWidth) => {
+          if (remainingWidth - nextWidth >= 0) {
+            return [count + 1, remainingWidth - nextWidth];
+          }
+          return [count, 0];
+        },
+        [0, availableWidth]
+      )[0],
+    [widths, availableWidth]
+  );
   const headerHeight = useHeaderHeight({
     columnWidths: widths,
     fields: visibleFields,
@@ -447,6 +462,7 @@ export function TableNG(props: TableNGProps) {
                 theme,
                 value,
                 width,
+                timeRange,
                 cellInspect,
                 showFilters,
                 getActions: getCellActions,
@@ -476,6 +492,7 @@ export function TableNG(props: TableNGProps) {
           name: displayName,
           width,
           headerCellClass,
+          frozen: Math.min(frozenColumns, numColsFullyInView) > i,
           renderCell: renderCellContent,
           renderHeaderCell: ({ column, sortDirection }) => (
             <HeaderCell
@@ -617,8 +634,11 @@ export function TableNG(props: TableNGProps) {
     expandedRows,
     filter,
     footerCalcs,
+    frozenColumns,
+    getCellActions,
     hasNestedFrames,
     isCountRowsSet,
+    numColsFullyInView,
     onCellFilterAdded,
     panelContext,
     rowHeight,
@@ -628,10 +648,10 @@ export function TableNG(props: TableNGProps) {
     showTypeIcons,
     sortColumns,
     styles,
+    timeRange,
     theme,
     visibleFields,
     widths,
-    getCellActions,
   ]);
 
   // invalidate columns on every structureRev change. this supports width editing in the fieldConfig.
