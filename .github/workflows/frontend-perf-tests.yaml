@@ -39,7 +39,6 @@ jobs:
         id: login-to-gar
         with:
           registry: 'us-docker.pkg.dev'
-          environment: 'dev'
 
       - name: Setup Node.js
         uses: ./.github/actions/setup-node
@@ -48,10 +47,10 @@ jobs:
         uses: actions/cache@v4
         id: nm-cache
         with:
-          path: ~/.cache/yarn
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          path: node_modules
+          key: ${{ runner.os }}-node_modules-${{ hashFiles('**/yarn.lock') }}
           restore-keys: |
-            ${{ runner.os }}-yarn-
+            ${{ runner.os }}-node_modules-
 
       - name: Yarn install
         run: yarn install --immutable
@@ -61,6 +60,8 @@ jobs:
           CYPRESS_INSTALL_BINARY: 0
 
       - name: Install Playwright browsers
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: /tmp/results.json
         run: yarn playwright install chromium --with-deps
 
       - name: Run Playwright tests
