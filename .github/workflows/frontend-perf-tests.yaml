@@ -48,7 +48,7 @@ jobs:
         id: nm-cache
         with:
           path: node_modules
-          key: ${{ runner.os }}-node_modules-${{ hashFiles('**/yarn.lock') }}
+          key: ${{ runner.os }}-node_modules-${{ hashFiles('yarn.lock') }}
 
       - name: Yarn install
         run: yarn install --immutable
