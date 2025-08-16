@@ -61,7 +61,7 @@ jobs:
 
       - name: Install Playwright browsers
         env:
-          PLAYWRIGHT_JSON_OUTPUT_NAME: /tmp/results.json
+          PLAYWRIGHT_JSON_OUTPUT_NAME: /tmp/playwright-results.json
         run: yarn playwright install chromium --with-deps
 
       - name: Run Playwright tests
