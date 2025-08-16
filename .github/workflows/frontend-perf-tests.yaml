@@ -70,27 +70,25 @@ jobs:
           GRAFANA_ADMIN_USER: ${{ env.FSPERFBASELINE_USERNAME }}
           GRAFANA_ADMIN_PASSWORD: ${{ env.FSPERFBASELINE_PASSWORD }}
         run: yarn e2e:playwright --grep @performance # probably written to wrong place
-
-      - run: tree -a playwright
-        if: always()
       
       - run: tree -aL 2
         if: always()
       
-      # - name: Bench report
-      #   run: |
-      #     docker run \
-      #       --rm \
-      #       --volume="/tmp/playwright-results.json:/home/bench/tests/playwright-results.json" \
-      #       -e PROMETHEUS_URL=$PROMETHEUS_URL \
-      #       -e PROMETHEUS_USER=$PROMETHEUS_USER \
-      #       -e PROMETHEUS_PASSWORD=$PROMETHEUS_TOKEN \
-      #       us-docker.pkg.dev/grafanalabs-global/docker-grafana-bench-prod/grafana-bench:v0.6.0 report \
-      #         --grafana-url "http://fsperfbaseline.grafana-dev.net" \
-      #         --test-suite-name "FrontendPerfTests" \
-      #         --report-input playwright \
-      #         --report-output log \
-      #         --prometheus-metrics \
-      #         --run-metrics-file "/tmp/asset-metrics.txt" \
-      #         --log-level DEBUG \
-      #         /home/bench/tests/playwright-results.json
+      - name: Bench report
+        run: |
+          docker run \
+            --rm \
+            --volume="/tmp/playwright-results.json:/tmp/playwright-results.json" \
+            --volume="/tmp/asset-metrics.txt:/tmp/asset-metrics.txt" \
+            -e PROMETHEUS_URL=$PROMETHEUS_URL \
+            -e PROMETHEUS_USER=$PROMETHEUS_USER \
+            -e PROMETHEUS_PASSWORD=$PROMETHEUS_TOKEN \
+            us-docker.pkg.dev/grafanalabs-global/docker-grafana-bench-prod/grafana-bench:v0.6.0 report \
+              --grafana-url "http://fsperfbaseline.grafana-dev.net" \
+              --test-suite-name "FrontendPerfTests" \
+              --report-input playwright \
+              --report-output log \
+              --prometheus-metrics \
+              --run-metrics-file "/tmp/asset-metrics.txt" \
+              --log-level DEBUG \
+              /tmp/playwright-results.json
